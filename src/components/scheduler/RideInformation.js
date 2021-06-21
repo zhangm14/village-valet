@@ -10,6 +10,8 @@ import Table from "react-bootstrap/Table"
 import {Autocomplete} from "@react-google-maps/api";
 import MapContainer from "../google-maps/MapContainer";
 import moment from "moment";
+import Button from "react-bootstrap/Button";
+import {APIkey} from "../../key.json";
 
 // Above are all the imports for this file.
 // Every file will need React, Component, connect
@@ -33,6 +35,7 @@ class RideInformation extends Component {
 
         this.autocomplete = {};
         this.count = 0;
+        this.url = {};
 
         this.onLoad = this.onLoad.bind(this);
         this.onPlaceChanged = this.onPlaceChanged.bind(this)
@@ -165,6 +168,40 @@ class RideInformation extends Component {
         options.push(<option value={"other"} label={"--Other--"} key="other"/>)
         return options;
     }
+    
+    CheckStarBus(lat1, lng1, lat2, lng2){
+        const fetch = require("node-fetch");
+        this.url = `https://cors-anywhere.herokuapp.com/https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat1},${lng1}&radius=1207&type=bus_station&key=${APIkey}`
+        fetch(this.url)
+            .then(function (response) {
+            if(response.ok){
+                return response.text();
+            }
+            throw new Error('Error message.');
+            })
+            .then(function (data) {
+            if(data.indexOf('INVALID_REQUEST') < 0 && data.indexOf('ZERO_RESULTS') < 0){
+                alert("StarBus is available for pickup");
+            }else {alert("StarBus is not available for pickup");}}.bind(this))
+            .catch(function (err) {
+            console.log("failed to load ", this.url, err.message);
+        });
+        this.url = `https://cors-anywhere.herokuapp.com/https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat2},${lng2}&radius=1207&type=bus_station&key=${APIkey}`
+        fetch(this.url)
+            .then(function (response) {
+            if(response.ok){
+                return response.text();
+            }
+            throw new Error('Error message.');
+            })
+            .then(function (data) {
+            if(data.indexOf('INVALID_REQUEST') < 0 && data.indexOf('ZERO_RESULTS') < 0){
+                alert("StarBus is available for dropoff");
+            } else {alert("StarBus is not available for dropoff");}}.bind(this))
+            .catch(function (err) {
+            console.log("failed to load ", this.url, err.message);
+        });
+    }
 
     vehicleOptions() {
         let options = [<option value={""} label={""}/>];
@@ -266,6 +303,16 @@ class RideInformation extends Component {
                                             moment(this.props.active_ride.locations.dropoff.time, "HH:mm")
                                                 .subtract(this.props.active_ride.ride_data.time_total.rider, 'second')
                                                 .format('hh:mm:ss A') : ""}
+                                    </Col>
+                                </Row>
+                                <Row>
+                                    <Col>
+                                        <button onClick={(e) => this.CheckStarBus(this.props.active_ride.locations.pickup.geolocation.lat, 
+                                                                                this.props.active_ride.locations.pickup.geolocation.lng,
+                                                                                this.props.active_ride.locations.dropoff.geolocation.lat,
+                                                                                this.props.active_ride.locations.dropoff.geolocation.lng)}>
+                                            StarBus available?
+                                            </button>
                                     </Col>
                                 </Row>
                             </Card.Body>
